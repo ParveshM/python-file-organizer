@@ -7,10 +7,10 @@ from google import genai
 from pathlib import Path 
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv() 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-s", "--src", help="Show output message")
+parser.add_argument("-s", "--src", help="Source directory")
 args = parser.parse_args()
 
 if not args.src :
