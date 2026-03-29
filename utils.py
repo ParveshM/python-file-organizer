@@ -1,3 +1,4 @@
+import os
 def getPromt(files):
      return f'''
 You are a file organizer assistant.
@@ -12,17 +13,11 @@ Rules:
 - Keep category names simple, single word, capitalized (e.g. Finance, Images, Documents)
 - If you are unsure, put it in "Others"
 
+Example output:
+{{finance :[budget.xlsx, gst.xlsx], images :[photo.jpg, logo.png]}}
 Here are the filenames:
 {files}
 '''
 
-
-FILE_TYPES = {
-    '.pdf': 'pdf',
-    '.docx': 'word',
-    '.xlsx': 'excel',
-    '.jpg': 'image',
-    '.png': 'image',
-    '.txt': 'text',
-    '.mp4': 'video',
-}
+def is_file(base_dir,file):
+    return os.path.isfile(os.path.join(base_dir,file))

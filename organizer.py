@@ -1,11 +1,12 @@
 import os
-import pathlib
 import json
 import shutil
 import argparse
-from google import genai
-from dotenv import load_dotenv
 import utils 
+from google import genai
+from pathlib import Path 
+from dotenv import load_dotenv
+
 load_dotenv()
 
 parser = argparse.ArgumentParser()
@@ -17,52 +18,47 @@ if not args.src :
      exit()
 
 
-# input_dir = r'C:\Users\lenovo\Downloads\test'
 input_dir = fr'{args.src}'
 
-if not (pathlib.Path(input_dir).is_dir()):
-     print(f"Source path: '{input_dir}' , is not a valid directory")
+if not (Path(input_dir).is_dir()):
+     print(f"Source path: '{input_dir}', is not a valid directory")
      exit()
 
-files = os.listdir(input_dir)[0:10]
 
-client = genai.Client()
-response = client.models.generate_content(
-    model="gemini-3-flash-preview", contents=utils.getPromt(files)
-)
-grouped_files = json.loads(response.text)
-# grouped_files = {}
-# total_files = 0
-# for file in files:
-#       suffix = pathlib.Path(file).suffix
-      
-#       if(suffix in utils.FILE_TYPES):
-#             val = utils.FILE_TYPES[suffix]
-#             if(val in grouped_files):
-#                 grouped_files[val].append(file)
-#                 total_files += 1
-#             else : grouped_files[val] = []
-# # Unique files 
-# unique_arranged = {}
-# for (key,value) in grouped_files.items():
-#    if(len(value)>0): 
-#         unique_arranged[key] = value
-        
-# List files to move by group
-# prettySortedfiles = json.dumps(grouped_files,indent = 4)
-total_files = 0
-# Move files into respective folders
-for key in grouped_files:
-    new_dir_path = fr'{input_dir}\{key}'
+def sort_and_move_files(input_dir):
+ try:
+    files_list = os.listdir(input_dir)
+    files = list(filter(lambda item:utils.is_file(input_dir,item),files_list))
     
-    has_dir = pathlib.Path(new_dir_path).is_dir()
-    if not has_dir: # create new directory if it doesn't exist
-        os.mkdir(new_dir_path)
+    if(len(files) == 0):
+        raise ValueError(f"No files found in the directory: '{input_dir}'")
+    print('Classifying files with AI, please wait...')
+    client = genai.Client()
+    response = client.models.generate_content(
+        model="gemini-3-flash-preview", contents=utils.getPromt(files)
+    )
+    grouped_files = json.loads(response.text or '{}')
+    print('Classification completed, moving files...')
+    total_files = 0
+    # Move files into respective folders
+    for key in grouped_files:
+        new_dir_path = os.path.join(input_dir, key)
 
-    for file in grouped_files[key]:
-     total_files += 1
-     file_path = fr'{input_dir}\{file}'
-     move_file = fr'{new_dir_path}\{file}'
-     shutil.move(file_path,move_file)
+        has_dir = Path(new_dir_path).is_dir()
+        if not has_dir: # create new directory if it doesn't exist
+            os.mkdir(new_dir_path)
 
-print('files moved:', total_files)
+        for file in grouped_files[key]:
+            total_files += 1
+            file_path = os.path.join(input_dir, file)
+            move_file = os.path.join(new_dir_path, file)
+            shutil.move(file_path, move_file)
+
+    print('files moved:', total_files)
+ except Exception as e:
+        if isinstance(e,json.JSONDecodeError):
+            print('Error: Failed to parse AI response. Please try again.')
+            return
+        print('Error:', str(e))
+
+sort_and_move_files(input_dir)
